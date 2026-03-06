@@ -25,16 +25,17 @@ public class RetryPolicy {
         return new RetryPolicy(3, 500, 2.0);
     }
 
-    public <T> T execute(RetryableOperation<T> operation, String operationName) throws ApiException {
-        ApiException lastException = null;
+    public <T> T execute(RetryableOperation<T> operation, String operationName)
+            throws ApiException, InterruptedException {
         long backoff = initialBackoffMs;
 
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 return operation.execute();
             } catch (ApiException e) {
-                lastException = e;
                 if (!e.isRetryable() || attempt == maxRetries) {
+                    LOGGER.log(Level.SEVERE, "{0}: failed after {1} attempt(s) (HTTP {2})",
+                        new Object[]{operationName, attempt, e.getStatusCode()});
                     throw e;
                 }
                 long jitter = ThreadLocalRandom.current().nextLong(0, backoff / 4 + 1);
@@ -42,22 +43,20 @@ public class RetryPolicy {
                 LOGGER.log(Level.WARNING,
                     "{0}: attempt {1}/{2} failed (HTTP {3}), retrying in {4}ms",
                     new Object[]{operationName, attempt, maxRetries, e.getStatusCode(), sleepMs});
-                try {
-                    Thread.sleep(sleepMs);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new ApiException("Interrupted during retry", ie);
-                }
+                Thread.sleep(sleepMs);
                 backoff = (long) (backoff * multiplier);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw e;
             } catch (Exception e) {
                 throw new ApiException("Unexpected error during " + operationName, e);
             }
         }
-        throw lastException;
+        throw new ApiException("Exhausted all " + maxRetries + " retries for " + operationName);
     }
 
     @FunctionalInterface
-    public interface RetryableOperation<T> {
+    interface RetryableOperation<T> {
         T execute() throws Exception;
     }
 }

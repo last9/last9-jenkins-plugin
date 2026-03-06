@@ -12,8 +12,6 @@ import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import io.last9.jenkins.plugins.last9.Last9GlobalConfiguration;
-import io.last9.jenkins.plugins.last9.api.Last9HttpApiClient;
-import io.last9.jenkins.plugins.last9.auth.CachingTokenManager;
 import io.last9.jenkins.plugins.last9.event.EventService;
 import io.last9.jenkins.plugins.last9.model.EventState;
 import jenkins.tasks.SimpleBuildStep;
@@ -22,6 +20,8 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Post-build action for Freestyle jobs.
@@ -30,6 +30,8 @@ import java.util.Map;
  * Also usable in pipelines via: step([$class: 'Last9PostBuildAction', serviceName: '...'])
  */
 public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
+
+    private static final Logger LOGGER = Logger.getLogger(Last9PostBuildAction.class.getName());
 
     private final String serviceName;
     private String environment;
@@ -63,16 +65,18 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
             throws InterruptedException, IOException {
 
         Last9GlobalConfiguration config = Last9GlobalConfiguration.get();
+        if (config == null) {
+            listener.error("[Last9] Plugin global configuration not found. "
+                + "Ensure the Last9 plugin is configured in Manage Jenkins > System.");
+            return;
+        }
 
-        String apiBaseUrl = config.getApiBaseUrl();
         String orgSlug = config.getOrgSlug();
         String credentialId = config.getCredentialId();
         String dsName = (dataSourceName != null && !dataSourceName.isBlank())
             ? dataSourceName : config.getDefaultDataSourceName();
 
-        var apiClient = new Last9HttpApiClient(apiBaseUrl);
-        var tokenManager = new CachingTokenManager(apiClient);
-        var eventService = new EventService(apiClient, tokenManager);
+        EventService eventService = config.getEventService();
 
         try {
             // Post-build action fires after the build completes, so send a "stop" event
@@ -81,8 +85,12 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
                 eventName, EventState.STOP, dsName,
                 serviceName, environment, customAttributes
             );
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw e;
         } catch (Exception e) {
             // Never fail the build due to observability errors
+            LOGGER.log(Level.WARNING, "Failed to send deployment marker for " + run.getFullDisplayName(), e);
             listener.error("[Last9] Failed to send deployment marker: " + e.getMessage());
         }
     }

@@ -12,7 +12,7 @@ public interface Last9ApiClient {
      * PUT /api/v4/organizations/{orgSlug}/change_events
      */
     void sendChangeEvent(String orgSlug, String accessToken, ChangeEventPayload payload)
-        throws ApiException;
+        throws ApiException, InterruptedException;
 
     /**
      * Exchange a refresh token for an access token.
@@ -20,5 +20,5 @@ public interface Last9ApiClient {
      *
      * @return the access token response as JSON string
      */
-    String exchangeToken(String refreshToken) throws ApiException;
+    String exchangeToken(String refreshToken) throws ApiException, InterruptedException;
 }

@@ -33,7 +33,7 @@ public class CachingTokenManager implements TokenManager {
     }
 
     @Override
-    public String getAccessToken(String refreshToken) throws ApiException {
+    public String getAccessToken(String refreshToken) throws ApiException, InterruptedException {
         String cacheKey = hashToken(refreshToken);
 
         AccessToken cached = cache.get(cacheKey);

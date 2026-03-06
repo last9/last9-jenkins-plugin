@@ -13,7 +13,7 @@ public interface TokenManager {
      * @param refreshToken the refresh token from Jenkins credentials store
      * @return a valid access token string
      */
-    String getAccessToken(String refreshToken) throws ApiException;
+    String getAccessToken(String refreshToken) throws ApiException, InterruptedException;
 
     /**
      * Force-invalidate all cached tokens.

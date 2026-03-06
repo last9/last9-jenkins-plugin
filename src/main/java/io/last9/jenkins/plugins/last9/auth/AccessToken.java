@@ -11,8 +11,4 @@ public record AccessToken(String token, Instant expiresAt) {
     public boolean isExpiringSoon(Duration buffer) {
         return Instant.now().plus(buffer).isAfter(expiresAt);
     }
-
-    public boolean isExpired() {
-        return Instant.now().isAfter(expiresAt);
-    }
 }

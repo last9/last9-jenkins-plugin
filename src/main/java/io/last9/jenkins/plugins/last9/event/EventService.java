@@ -51,7 +51,7 @@ public class EventService {
             String dataSourceName,
             String serviceName,
             String deploymentEnvironment,
-            Map<String, String> customAttributes) throws ApiException {
+            Map<String, String> customAttributes) throws ApiException, InterruptedException {
 
         listener.getLogger().println("[Last9] Sending deployment marker: "
             + eventName + " (" + eventState.getValue() + ") for " + serviceName);

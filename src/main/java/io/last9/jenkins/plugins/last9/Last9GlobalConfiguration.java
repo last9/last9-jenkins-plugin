@@ -8,6 +8,9 @@ import hudson.model.Item;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import io.last9.jenkins.plugins.last9.api.Last9HttpApiClient;
+import io.last9.jenkins.plugins.last9.auth.CachingTokenManager;
+import io.last9.jenkins.plugins.last9.event.EventService;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import org.jenkinsci.Symbol;
@@ -31,8 +34,25 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
     private String credentialId;
     private String defaultDataSourceName;
 
+    // Singleton service instances — shared across all builds
+    private transient volatile EventService eventService;
+    private transient volatile String currentApiBaseUrl;
+
     public Last9GlobalConfiguration() {
         load();
+    }
+
+    /**
+     * Returns a shared EventService instance, recreating it if apiBaseUrl changed.
+     */
+    public synchronized EventService getEventService() {
+        if (eventService == null || !apiBaseUrl.equals(currentApiBaseUrl)) {
+            var apiClient = new Last9HttpApiClient(apiBaseUrl);
+            var tokenManager = new CachingTokenManager(apiClient);
+            eventService = new EventService(apiClient, tokenManager);
+            currentApiBaseUrl = apiBaseUrl;
+        }
+        return eventService;
     }
 
     public static Last9GlobalConfiguration get() {
@@ -107,6 +127,7 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
     /**
      * Populates the credentials dropdown in the config UI.
      */
+    @POST
     public ListBoxModel doFillCredentialIdItems(@QueryParameter String credentialId) {
         Jenkins jenkins = Jenkins.get();
         if (!jenkins.hasPermission(Jenkins.ADMINISTER)) {

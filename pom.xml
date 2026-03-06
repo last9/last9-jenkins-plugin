@@ -18,7 +18,6 @@
     <packaging>hpi</packaging>
 
     <name>Last9</name>
-    <description>Send deployment markers and change events to Last9 for observability tracking</description>
     <url>https://github.com/last9/last9-jenkins-plugin</url>
 
     <licenses>

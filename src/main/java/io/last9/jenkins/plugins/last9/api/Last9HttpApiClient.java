@@ -40,7 +40,7 @@ public class Last9HttpApiClient implements Last9ApiClient {
 
     @Override
     public void sendChangeEvent(String orgSlug, String accessToken, ChangeEventPayload payload)
-            throws ApiException {
+            throws ApiException, InterruptedException {
         String url = baseUrl + "/api/" + API_VERSION + "/organizations/" + orgSlug + "/change_events";
         String body = JsonSerializer.serialize(payload);
 
@@ -65,7 +65,7 @@ public class Last9HttpApiClient implements Last9ApiClient {
     }
 
     @Override
-    public String exchangeToken(String refreshToken) throws ApiException {
+    public String exchangeToken(String refreshToken) throws ApiException, InterruptedException {
         String url = baseUrl + "/api/" + API_VERSION + "/oauth/access_token";
         String body = JsonSerializer.serializeTokenRequest(refreshToken);
 

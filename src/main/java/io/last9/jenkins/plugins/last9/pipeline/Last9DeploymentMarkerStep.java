@@ -1,9 +1,11 @@
 package io.last9.jenkins.plugins.last9.pipeline;
 
+import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.workflow.steps.Step;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
@@ -11,8 +13,6 @@ import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
 import io.last9.jenkins.plugins.last9.Last9GlobalConfiguration;
 import io.last9.jenkins.plugins.last9.api.ApiException;
-import io.last9.jenkins.plugins.last9.api.Last9HttpApiClient;
-import io.last9.jenkins.plugins.last9.auth.CachingTokenManager;
 import io.last9.jenkins.plugins.last9.event.EventService;
 import io.last9.jenkins.plugins.last9.model.EventState;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -20,6 +20,8 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Pipeline step: last9DeploymentMarker(serviceName: '...', ...)
@@ -77,6 +79,7 @@ public class Last9DeploymentMarkerStep extends Step {
     private static class Execution extends SynchronousNonBlockingStepExecution<Void> {
 
         private static final long serialVersionUID = 1L;
+        private static final Logger LOGGER = Logger.getLogger(Execution.class.getName());
         private final transient Last9DeploymentMarkerStep step;
 
         Execution(StepContext context, Last9DeploymentMarkerStep step) {
@@ -90,18 +93,24 @@ public class Last9DeploymentMarkerStep extends Step {
             TaskListener listener = getContext().get(TaskListener.class);
 
             Last9GlobalConfiguration config = Last9GlobalConfiguration.get();
+            if (config == null) {
+                throw new AbortException("[Last9] Plugin global configuration not found. "
+                    + "Ensure the Last9 plugin is installed and configured in Manage Jenkins > System.");
+            }
 
             // Resolve: step override > global config
             String orgSlug = coalesce(step.getOrgSlug(), config.getOrgSlug());
             String credentialId = coalesce(step.getCredentialId(), config.getCredentialId());
-            String apiBaseUrl = config.getApiBaseUrl();
             String dataSourceName = coalesce(step.getDataSourceName(), config.getDefaultDataSourceName());
 
-            var apiClient = new Last9HttpApiClient(apiBaseUrl);
-            var tokenManager = new CachingTokenManager(apiClient);
-            var eventService = new EventService(apiClient, tokenManager);
+            EventService eventService = config.getEventService();
 
-            EventState state = EventState.fromString(step.getEventState());
+            EventState state;
+            try {
+                state = EventState.fromString(step.getEventState());
+            } catch (IllegalArgumentException e) {
+                throw new AbortException("[Last9] " + e.getMessage());
+            }
 
             try {
                 eventService.sendDeploymentMarker(
@@ -111,14 +120,15 @@ public class Last9DeploymentMarkerStep extends Step {
                     step.getCustomAttributes()
                 );
             } catch (ApiException e) {
+                LOGGER.log(Level.WARNING, "Failed to send deployment marker for " + run.getFullDisplayName(), e);
                 listener.error("[Last9] Failed to send deployment marker: " + e.getMessage());
-                throw e;
+                throw new AbortException("[Last9] " + e.getMessage());
             }
 
             return null;
         }
 
-        private static String coalesce(String... values) {
+        static String coalesce(String... values) {
             for (String v : values) {
                 if (v != null && !v.isBlank()) return v;
             }
@@ -127,6 +137,7 @@ public class Last9DeploymentMarkerStep extends Step {
     }
 
     @Extension
+    @Symbol("last9DeploymentMarker")
     public static class DescriptorImpl extends StepDescriptor {
 
         @Override

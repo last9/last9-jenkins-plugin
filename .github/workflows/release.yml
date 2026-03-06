@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.2.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Build release artifact
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          MAVEN_OPTS: "-Dmaven.compiler.release=17"
+        run: mvn --batch-mode package -DskipTests -Drevision="$RELEASE_VERSION" -Dchangelist=
+
+      - name: Tag release
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          git tag "v${RELEASE_VERSION}" -m "Release v${RELEASE_VERSION}"
+          git push origin "v${RELEASE_VERSION}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: v${{ inputs.version }}
+          generate_release_notes: true
+          files: target/*.hpi

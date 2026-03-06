@@ -1,0 +1,44 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+
+  <f:entry title="Service Name" field="serviceName"
+           description="Service name (must match APM service name in Last9)">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Environment" field="environment"
+           description="Deployment environment (e.g., production, staging)">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Event Name" field="eventName"
+           description="Custom event name (default: deployment)">
+    <f:textbox default="deployment" />
+  </f:entry>
+
+  <f:entry title="Data Source Name" field="dataSourceName"
+           description="Override global data source name (optional)">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Send on Success" field="sendOnSuccess"
+           description="Send deployment marker when the build succeeds (default: true)">
+    <f:checkbox />
+  </f:entry>
+
+  <f:entry title="Send on Failure" field="sendOnFailure"
+           description="Send deployment marker when the build fails">
+    <f:checkbox />
+  </f:entry>
+
+  <f:entry title="Send on Unstable" field="sendOnUnstable"
+           description="Send deployment marker when the build is unstable">
+    <f:checkbox />
+  </f:entry>
+
+  <f:entry title="Send on Aborted" field="sendOnAborted"
+           description="Send deployment marker when the build is aborted">
+    <f:checkbox />
+  </f:entry>
+
+</j:jelly>

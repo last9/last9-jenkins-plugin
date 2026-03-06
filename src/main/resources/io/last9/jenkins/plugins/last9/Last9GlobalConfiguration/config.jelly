@@ -1,0 +1,26 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+
+  <f:section title="Last9">
+    <f:entry title="Organization Slug" field="orgSlug"
+             description="Your Last9 organization slug (visible in your app.last9.io URL)">
+      <f:textbox />
+    </f:entry>
+
+    <f:entry title="API Base URL" field="apiBaseUrl"
+             description="Last9 API endpoint. Default: https://app.last9.io">
+      <f:textbox default="https://app.last9.io" />
+    </f:entry>
+
+    <f:entry title="API Credential" field="credentialId"
+             description="Jenkins credential (Secret text) containing the Last9 refresh token">
+      <c:select />
+    </f:entry>
+
+    <f:entry title="Default Data Source Name" field="defaultDataSourceName"
+             description="Default Last9 data source name for change events (optional)">
+      <f:textbox />
+    </f:entry>
+  </f:section>
+
+</j:jelly>

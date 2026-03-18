@@ -35,7 +35,8 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
 
     private final String serviceName;
     private String environment;
-    private String eventName = "deployment";
+    private static final String DEFAULT_EVENT_NAME = "deployment";
+    private String eventName;
     private String dataSourceName;
     private Map<String, String> customAttributes;
 
@@ -48,7 +49,7 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
 
     public String getServiceName() { return serviceName; }
     public String getEnvironment() { return environment; }
-    public String getEventName() { return eventName; }
+    public String getEventName() { return eventName != null ? eventName : DEFAULT_EVENT_NAME; }
     public String getDataSourceName() { return dataSourceName; }
     public Map<String, String> getCustomAttributes() { return customAttributes; }
 
@@ -82,7 +83,7 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
             // Post-build action fires after the build completes, so send a "stop" event
             eventService.sendDeploymentMarker(
                 run, listener, credentialId, orgSlug,
-                eventName, EventState.STOP, dsName,
+                getEventName(), EventState.STOP, dsName,
                 serviceName, environment, customAttributes
             );
         } catch (InterruptedException e) {

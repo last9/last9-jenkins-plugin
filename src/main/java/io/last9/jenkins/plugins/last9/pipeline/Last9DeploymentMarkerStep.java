@@ -34,8 +34,10 @@ public class Last9DeploymentMarkerStep extends Step {
 
     private final String serviceName;
     private String environment;
-    private String eventState = "stop";
-    private String eventName = "deployment";
+    private static final String DEFAULT_EVENT_STATE = "stop";
+    private static final String DEFAULT_EVENT_NAME = "deployment";
+    private String eventState;
+    private String eventName;
     private String dataSourceName;
     private Map<String, String> customAttributes;
     // Per-step overrides (optional — defaults come from global config)
@@ -51,8 +53,8 @@ public class Last9DeploymentMarkerStep extends Step {
 
     public String getServiceName() { return serviceName; }
     public String getEnvironment() { return environment; }
-    public String getEventState() { return eventState; }
-    public String getEventName() { return eventName; }
+    public String getEventState() { return eventState != null ? eventState : DEFAULT_EVENT_STATE; }
+    public String getEventName() { return eventName != null ? eventName : DEFAULT_EVENT_NAME; }
     public String getDataSourceName() { return dataSourceName; }
     public Map<String, String> getCustomAttributes() { return customAttributes; }
     public String getOrgSlug() { return orgSlug; }

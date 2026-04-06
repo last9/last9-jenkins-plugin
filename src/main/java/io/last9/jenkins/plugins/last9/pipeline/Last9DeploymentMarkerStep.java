@@ -1,6 +1,5 @@
 package io.last9.jenkins.plugins.last9.pipeline;
 
-import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.Run;
@@ -94,8 +93,9 @@ public class Last9DeploymentMarkerStep extends Step {
 
             Last9GlobalConfiguration config = Last9GlobalConfiguration.get();
             if (config == null) {
-                throw new AbortException("[Last9] Plugin global configuration not found. "
-                    + "Ensure the Last9 plugin is installed and configured in Manage Jenkins > System.");
+                listener.error("[Last9] Plugin not configured. Skipping deployment marker. "
+                    + "Set it up at Manage Jenkins > System > Last9.");
+                return null;
             }
 
             // Resolve: step override > global config
@@ -109,7 +109,9 @@ public class Last9DeploymentMarkerStep extends Step {
             try {
                 state = EventState.fromString(step.getEventState());
             } catch (IllegalArgumentException e) {
-                throw new AbortException("[Last9] " + e.getMessage());
+                listener.error("[Last9] Invalid eventState '" + step.getEventState()
+                    + "'. Use 'start' or 'stop'. Skipping.");
+                return null;
             }
 
             try {
@@ -120,9 +122,9 @@ public class Last9DeploymentMarkerStep extends Step {
                     step.getCustomAttributes()
                 );
             } catch (ApiException e) {
+                // Deployment markers are observability — never fail the build over them.
                 LOGGER.log(Level.WARNING, "Failed to send deployment marker for " + run.getFullDisplayName(), e);
-                listener.error("[Last9] Failed to send deployment marker: " + e.getMessage());
-                throw new AbortException("[Last9] " + e.getMessage());
+                listener.error("[Last9] Failed to send deployment marker: " + e.getMessage() + ". Build continues.");
             }
 
             return null;

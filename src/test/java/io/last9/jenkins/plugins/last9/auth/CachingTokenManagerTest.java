@@ -94,7 +94,7 @@ public class CachingTokenManagerTest {
             manager.getAccessToken("refresh-123");
             fail("Should have thrown ApiException");
         } catch (Exception e) {
-            assertInstanceOf(ApiException.class, e);
+            assertTrue(e instanceof ApiException);
             assertTrue(e.getMessage().contains("empty access_token"));
         }
     }
@@ -109,7 +109,7 @@ public class CachingTokenManagerTest {
             manager.getAccessToken("refresh-123");
             fail("Should have thrown ApiException");
         } catch (Exception e) {
-            assertInstanceOf(ApiException.class, e);
+            assertTrue(e instanceof ApiException);
             assertTrue(e.getMessage().contains("empty access_token"));
         }
     }

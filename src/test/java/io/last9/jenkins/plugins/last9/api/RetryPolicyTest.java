@@ -43,7 +43,7 @@ public class RetryPolicyTest {
             }, "test-op");
             fail("Should have thrown");
         } catch (Exception e) {
-            assertInstanceOf(ApiException.class, e);
+            assertTrue(e instanceof ApiException);
             assertEquals(400, ((ApiException) e).getStatusCode());
         }
         assertEquals(1, attempts.get());
@@ -61,7 +61,7 @@ public class RetryPolicyTest {
             }, "test-op");
             fail("Should have thrown");
         } catch (Exception e) {
-            assertInstanceOf(ApiException.class, e);
+            assertTrue(e instanceof ApiException);
             assertEquals(503, ((ApiException) e).getStatusCode());
         }
         assertEquals(2, attempts.get());
@@ -98,7 +98,7 @@ public class RetryPolicyTest {
             }, "test-op");
             fail("Should have thrown");
         } catch (Exception e) {
-            assertInstanceOf(ApiException.class, e);
+            assertTrue(e instanceof ApiException);
             assertTrue(e.getMessage().contains("Unexpected error"));
             assertTrue(e.getMessage().contains("test-op"));
         }

@@ -21,6 +21,14 @@
              description="Default Last9 data source name for change events (optional)">
       <f:textbox />
     </f:entry>
+
+    <f:entry>
+      <f:validateButton
+          title="Test Connection"
+          progress="Testing..."
+          method="testConnection"
+          with="orgSlug,credentialId,apiBaseUrl" />
+    </f:entry>
   </f:section>
 
 </j:jelly>

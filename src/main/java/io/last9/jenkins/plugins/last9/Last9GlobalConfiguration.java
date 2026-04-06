@@ -4,7 +4,6 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import hudson.Extension;
-import hudson.model.Item;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
@@ -30,7 +29,7 @@ import java.util.Collections;
 public class Last9GlobalConfiguration extends GlobalConfiguration {
 
     private String orgSlug;
-    private String apiBaseUrl = "https://app.last9.io";
+    private volatile String apiBaseUrl = "https://app.last9.io";
     private String credentialId;
     private String defaultDataSourceName;
 
@@ -40,6 +39,14 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
 
     public Last9GlobalConfiguration() {
         load();
+    }
+
+    /**
+     * Replaces the EventService with a pre-built instance. Intended for testing only.
+     */
+    public synchronized void setEventServiceForTesting(EventService eventService) {
+        this.eventService = eventService;
+        this.currentApiBaseUrl = this.apiBaseUrl;
     }
 
     /**
@@ -105,6 +112,54 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
     }
 
     // --- Form validation ---
+
+    /**
+     * Validates the configured credentials and org slug by attempting a token exchange.
+     * Called by the "Test Connection" button in the global config UI.
+     */
+    @POST
+    public FormValidation doTestConnection(
+            @QueryParameter String orgSlug,
+            @QueryParameter String credentialId,
+            @QueryParameter String apiBaseUrl) {
+        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+
+        if (orgSlug == null || orgSlug.isBlank()) {
+            return FormValidation.error("Organization slug is required");
+        }
+        if (credentialId == null || credentialId.isBlank()) {
+            return FormValidation.error("API credential is required");
+        }
+
+        // ACL.SYSTEM2 overload is not available for ItemGroup on this credentials plugin version;
+        // ACL.SYSTEM (Acegi) is the supported path here.
+        @SuppressWarnings("deprecation")
+        StringCredentials cred = CredentialsMatchers.firstOrNull(
+            CredentialsProvider.lookupCredentials(
+                StringCredentials.class,
+                Jenkins.get(),
+                ACL.SYSTEM,
+                Collections.emptyList()
+            ),
+            CredentialsMatchers.withId(credentialId)
+        );
+
+        if (cred == null) {
+            return FormValidation.error("Credential not found: " + credentialId);
+        }
+
+        String resolvedBaseUrl = (apiBaseUrl == null || apiBaseUrl.isBlank())
+            ? "https://app.last9.io" : apiBaseUrl.trim();
+
+        try {
+            var client = new Last9HttpApiClient(resolvedBaseUrl);
+            var tokenManager = new CachingTokenManager(client);
+            tokenManager.getAccessToken(cred.getSecret().getPlainText());
+            return FormValidation.ok("Connected successfully to " + resolvedBaseUrl);
+        } catch (Exception e) {
+            return FormValidation.error("Connection failed: " + e.getMessage());
+        }
+    }
 
     @POST
     public FormValidation doCheckOrgSlug(@QueryParameter String value) {

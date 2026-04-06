@@ -21,7 +21,10 @@ public class JenkinsContextCollector implements AttributeCollector {
         Map<String, String> attrs = new LinkedHashMap<>();
 
         try {
-            attrs.put("jenkins.job_name", run.getParent().getFullName());
+            var parent = run.getParent();
+            if (parent != null) {
+                attrs.put("jenkins.job_name", parent.getFullName());
+            }
             attrs.put("jenkins.build_number", String.valueOf(run.getNumber()));
 
             String buildUrl = run.getAbsoluteUrl();
@@ -29,8 +32,9 @@ public class JenkinsContextCollector implements AttributeCollector {
                 attrs.put("jenkins.build_url", buildUrl);
             }
 
-            if (run.getResult() != null) {
-                attrs.put("jenkins.build_result", run.getResult().toString());
+            var result = run.getResult();
+            if (result != null) {
+                attrs.put("jenkins.build_result", result.toString());
             }
 
             long durationMs = System.currentTimeMillis() - run.getStartTimeInMillis();

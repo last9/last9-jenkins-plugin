@@ -43,7 +43,12 @@ public class RetryPolicy {
                 LOGGER.log(Level.WARNING,
                     "{0}: attempt {1}/{2} failed (HTTP {3}), retrying in {4}ms",
                     new Object[]{operationName, attempt, maxRetries, e.getStatusCode(), sleepMs});
-                Thread.sleep(sleepMs);
+                try {
+                    Thread.sleep(sleepMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw ie;
+                }
                 backoff = (long) (backoff * multiplier);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

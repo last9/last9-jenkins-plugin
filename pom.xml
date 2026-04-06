@@ -18,7 +18,18 @@
     <packaging>hpi</packaging>
 
     <name>Last9</name>
+    <description>Send deployment markers and change events to Last9. Tracks deployment windows with start/stop pairs, auto-captures git and build context, and correlates deploys with performance data in Last9 dashboards.</description>
     <url>https://github.com/last9/last9-jenkins-plugin</url>
+
+    <developers>
+        <developer>
+            <id>last9</id>
+            <name>Last9 Engineering</name>
+            <email>engineering@last9.io</email>
+            <organization>Last9 Inc.</organization>
+            <organizationUrl>https://last9.io</organizationUrl>
+        </developer>
+    </developers>
 
     <licenses>
         <license>
@@ -40,13 +51,39 @@
         <jenkins.version>2.462.3</jenkins.version>
         <maven.compiler.release>17</maven.compiler.release>
         <maven.compiler.testRelease>17</maven.compiler.testRelease>
+        <spotbugs.effort>Max</spotbugs.effort>
+        <spotbugs.threshold>Medium</spotbugs.threshold>
     </properties>
 
     <build>
         <plugins>
             <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <!-- Plugin-level config takes precedence over HPI plugin's runtime
+                     property injection of maven.compiler.release=11. -->
+                <configuration>
+                    <release>17</release>
+                </configuration>
                 <executions>
                     <execution>
                         <id>default-compile</id>

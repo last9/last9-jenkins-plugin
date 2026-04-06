@@ -5,6 +5,7 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
@@ -38,6 +39,11 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
     private String eventName = "deployment";
     private String dataSourceName;
     private Map<String, String> customAttributes;
+    // Send conditions — defaults: only on success, silent on everything else
+    private boolean sendOnSuccess = true;
+    private boolean sendOnFailure = false;
+    private boolean sendOnUnstable = false;
+    private boolean sendOnAborted = false;
 
     @DataBoundConstructor
     public Last9PostBuildAction(String serviceName) {
@@ -51,6 +57,10 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
     public String getEventName() { return eventName; }
     public String getDataSourceName() { return dataSourceName; }
     public Map<String, String> getCustomAttributes() { return customAttributes; }
+    public boolean isSendOnSuccess() { return sendOnSuccess; }
+    public boolean isSendOnFailure() { return sendOnFailure; }
+    public boolean isSendOnUnstable() { return sendOnUnstable; }
+    public boolean isSendOnAborted() { return sendOnAborted; }
 
     // --- Setters ---
 
@@ -58,16 +68,29 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
     @DataBoundSetter public void setEventName(String eventName) { this.eventName = eventName; }
     @DataBoundSetter public void setDataSourceName(String dataSourceName) { this.dataSourceName = dataSourceName; }
     @DataBoundSetter public void setCustomAttributes(Map<String, String> customAttributes) { this.customAttributes = customAttributes; }
+    @DataBoundSetter public void setSendOnSuccess(boolean sendOnSuccess) { this.sendOnSuccess = sendOnSuccess; }
+    @DataBoundSetter public void setSendOnFailure(boolean sendOnFailure) { this.sendOnFailure = sendOnFailure; }
+    @DataBoundSetter public void setSendOnUnstable(boolean sendOnUnstable) { this.sendOnUnstable = sendOnUnstable; }
+    @DataBoundSetter public void setSendOnAborted(boolean sendOnAborted) { this.sendOnAborted = sendOnAborted; }
 
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, EnvVars env,
                         Launcher launcher, TaskListener listener)
             throws InterruptedException, IOException {
 
+        // Check build result against send conditions
+        Result result = run.getResult();
+        if (result != null) {
+            if (Result.SUCCESS.equals(result) && !sendOnSuccess) return;
+            if (Result.FAILURE.equals(result) && !sendOnFailure) return;
+            if (Result.UNSTABLE.equals(result) && !sendOnUnstable) return;
+            if (Result.ABORTED.equals(result) && !sendOnAborted) return;
+        }
+
         Last9GlobalConfiguration config = Last9GlobalConfiguration.get();
         if (config == null) {
-            listener.error("[Last9] Plugin global configuration not found. "
-                + "Ensure the Last9 plugin is configured in Manage Jenkins > System.");
+            listener.error("[Last9] Plugin not configured. Skipping deployment marker. "
+                + "Set it up at Manage Jenkins > System > Last9.");
             return;
         }
 

@@ -21,24 +21,4 @@
     <f:textbox />
   </f:entry>
 
-  <f:entry title="Send on Success" field="sendOnSuccess"
-           description="Send deployment marker when the build succeeds (default: true)">
-    <f:checkbox />
-  </f:entry>
-
-  <f:entry title="Send on Failure" field="sendOnFailure"
-           description="Send deployment marker when the build fails">
-    <f:checkbox />
-  </f:entry>
-
-  <f:entry title="Send on Unstable" field="sendOnUnstable"
-           description="Send deployment marker when the build is unstable">
-    <f:checkbox />
-  </f:entry>
-
-  <f:entry title="Send on Aborted" field="sendOnAborted"
-           description="Send deployment marker when the build is aborted">
-    <f:checkbox />
-  </f:entry>
-
 </j:jelly>

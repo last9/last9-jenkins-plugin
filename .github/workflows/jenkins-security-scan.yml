@@ -19,3 +19,6 @@ jobs:
     uses: jenkins-infra/jenkins-security-scan/.github/workflows/jenkins-security-scan.yaml@v2
     with:
       java-cache: 'maven'
+    # CodeQL upload requires GitHub Advanced Security (org-level setting).
+    # Remove continue-on-error once the plugin is under jenkins-infra hosting.
+    continue-on-error: true

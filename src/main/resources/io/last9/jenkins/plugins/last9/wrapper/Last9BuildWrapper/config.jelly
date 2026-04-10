@@ -21,4 +21,14 @@
     <f:textbox />
   </f:entry>
 
+  <f:entry title="Organization Slug" field="orgSlug"
+           description="Override global org slug (optional, for multi-team Jenkins)">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Credential ID" field="credentialId"
+           description="Override global credential (optional, for multi-team Jenkins)">
+    <f:textbox />
+  </f:entry>
+
 </j:jelly>

@@ -1,5 +1,7 @@
 package io.last9.jenkins.plugins.last9.auth;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.last9.jenkins.plugins.last9.api.ApiException;
 import io.last9.jenkins.plugins.last9.api.Last9ApiClient;
 import io.last9.jenkins.plugins.last9.util.JsonSerializer;
@@ -10,7 +12,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +27,7 @@ public class CachingTokenManager implements TokenManager {
     private static final Duration DEFAULT_TOKEN_LIFETIME = Duration.ofHours(1);
 
     private final Last9ApiClient apiClient;
-    private final ConcurrentHashMap<String, AccessToken> cache = new ConcurrentHashMap<>();
+    private final Cache<String, AccessToken> cache = Caffeine.newBuilder().build();
 
     public CachingTokenManager(Last9ApiClient apiClient) {
         this.apiClient = apiClient;
@@ -36,7 +37,7 @@ public class CachingTokenManager implements TokenManager {
     public String getAccessToken(String refreshToken) throws ApiException, InterruptedException {
         String cacheKey = hashToken(refreshToken);
 
-        AccessToken cached = cache.get(cacheKey);
+        AccessToken cached = cache.getIfPresent(cacheKey);
         if (cached != null && !cached.isExpiringSoon(EXPIRY_BUFFER)) {
             LOGGER.log(Level.FINE, "Using cached access token");
             return cached.token();
@@ -44,12 +45,12 @@ public class CachingTokenManager implements TokenManager {
 
         synchronized (this) {
             // Double-check after acquiring lock
-            cached = cache.get(cacheKey);
+            cached = cache.getIfPresent(cacheKey);
             if (cached != null && !cached.isExpiringSoon(EXPIRY_BUFFER)) {
                 return cached.token();
             }
 
-            LOGGER.log(Level.INFO, "Exchanging refresh token for new access token");
+            LOGGER.log(Level.FINE, "Exchanging refresh token for new access token");
             String responseJson = apiClient.exchangeToken(refreshToken);
 
             String accessToken = JsonSerializer.extractField(responseJson, "access_token");
@@ -69,15 +70,15 @@ public class CachingTokenManager implements TokenManager {
 
             AccessToken newToken = new AccessToken(accessToken, Instant.now().plus(lifetime));
             cache.put(cacheKey, newToken);
-            LOGGER.log(Level.INFO, "Access token cached, expires in {0}s", lifetime.toSeconds());
+            LOGGER.log(Level.FINE, "Access token cached, expires in {0}s", lifetime.toSeconds());
             return accessToken;
         }
     }
 
     @Override
     public void invalidate() {
-        cache.clear();
-        LOGGER.log(Level.INFO, "Token cache invalidated");
+        cache.invalidateAll();
+        LOGGER.log(Level.FINE, "Token cache invalidated");
     }
 
     private static String hashToken(String token) {

@@ -19,7 +19,7 @@
 
     <name>Last9</name>
     <description>Send deployment markers and change events to Last9. Tracks deployment windows with start/stop pairs, auto-captures git and build context, and correlates deploys with performance data in Last9 dashboards.</description>
-    <url>https://github.com/last9/last9-jenkins-plugin</url>
+    <url>https://github.com/${gitHubRepo}</url>
 
     <licenses>
         <license>
@@ -29,15 +29,16 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:https://github.com/last9/last9-jenkins-plugin.git</connection>
-        <developerConnection>scm:git:git@github.com:last9/last9-jenkins-plugin.git</developerConnection>
-        <url>https://github.com/last9/last9-jenkins-plugin</url>
+        <connection>scm:git:https://github.com/${gitHubRepo}.git</connection>
+        <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
+        <url>https://github.com/${gitHubRepo}</url>
         <tag>${scmTag}</tag>
     </scm>
 
     <properties>
-        <revision>1.0.0</revision>
-        <changelist>999999-SNAPSHOT</changelist>
+        <revision>1.0</revision>
+        <changelist>-SNAPSHOT</changelist>
+        <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
         <jenkins.baseline>2.528</jenkins.baseline>
         <jenkins.version>${jenkins.baseline}.3</jenkins.version>
         <hpi.strictBundledArtifacts>true</hpi.strictBundledArtifacts>
@@ -83,6 +84,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- Caching -->
+        <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>caffeine-api</artifactId>
+        </dependency>
+
         <!-- Pipeline Step API -->
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>

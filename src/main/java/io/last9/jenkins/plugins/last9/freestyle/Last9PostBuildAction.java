@@ -133,7 +133,13 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
         return BuildStepMonitor.NONE;
     }
 
+    @Override
+    public boolean requiresWorkspace() {
+        return false;
+    }
+
     @Extension
+    @org.jenkinsci.Symbol("last9DeploymentMarker")
     public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
 
         @Override

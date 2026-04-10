@@ -130,7 +130,7 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
             @QueryParameter String orgSlug,
             @QueryParameter String credentialId,
             @QueryParameter String apiBaseUrl) {
-        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        Jenkins.get().checkPermission(Jenkins.MANAGE);
 
         if (orgSlug == null || orgSlug.isBlank()) {
             return FormValidation.error("Organization slug is required");
@@ -139,14 +139,11 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
             return FormValidation.error("API credential is required");
         }
 
-        // ACL.SYSTEM2 overload is not available for ItemGroup on this credentials plugin version;
-        // ACL.SYSTEM (Acegi) is the supported path here.
-        @SuppressWarnings("deprecation")
         StringCredentials cred = CredentialsMatchers.firstOrNull(
-            CredentialsProvider.lookupCredentials(
+            CredentialsProvider.lookupCredentialsInItemGroup(
                 StringCredentials.class,
                 Jenkins.get(),
-                ACL.SYSTEM,
+                ACL.SYSTEM2,
                 Collections.emptyList()
             ),
             CredentialsMatchers.withId(credentialId)
@@ -170,17 +167,8 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
     }
 
     @POST
-    public FormValidation doCheckOrgSlug(@QueryParameter String value) {
-        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
-        if (value == null || value.isBlank()) {
-            return FormValidation.error("Organization slug is required");
-        }
-        return FormValidation.ok();
-    }
-
-    @POST
     public FormValidation doCheckCredentialId(@QueryParameter String value) {
-        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        Jenkins.get().checkPermission(Jenkins.MANAGE);
         if (value == null || value.isBlank()) {
             return FormValidation.warning("No credential selected. A Last9 refresh token is required.");
         }
@@ -193,7 +181,7 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
     @POST
     public ListBoxModel doFillCredentialIdItems(@QueryParameter String credentialId) {
         Jenkins jenkins = Jenkins.get();
-        if (!jenkins.hasPermission(Jenkins.ADMINISTER)) {
+        if (!jenkins.hasPermission(Jenkins.MANAGE)) {
             return new StandardListBoxModel().includeCurrentValue(credentialId);
         }
         return new StandardListBoxModel()

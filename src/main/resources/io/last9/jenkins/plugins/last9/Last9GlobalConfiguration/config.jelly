@@ -4,7 +4,7 @@
   <f:section title="Last9">
     <f:entry title="Organization Slug" field="orgSlug"
              description="Your Last9 organization slug (visible in your app.last9.io URL)">
-      <f:textbox />
+      <f:textbox clazz="required" checkMessage="Organization slug is required" />
     </f:entry>
 
     <f:entry title="API Base URL" field="apiBaseUrl"

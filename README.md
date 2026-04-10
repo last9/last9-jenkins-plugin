@@ -24,7 +24,26 @@ Hit **Test Connection** to verify before saving.
 
 ## Pipeline
 
-### Start/stop window
+### Deployment window (recommended)
+
+Use the `withLast9Deployment` block — the stop marker is guaranteed even on failure:
+
+```groovy
+pipeline {
+  agent any
+  stages {
+    stage('Deploy') {
+      steps {
+        withLast9Deployment(serviceName: 'payments-api', environment: 'production') {
+          sh './deploy.sh'
+        }
+      }
+    }
+  }
+}
+```
+
+### Manual start/stop
 
 ```groovy
 pipeline {
@@ -141,12 +160,6 @@ stage('Deploy Services') {
   }
 }
 ```
-
-## Requirements
-
-- Jenkins 2.462.3 or newer
-- Java 17 or newer
-- A Last9 account with API token access
 
 ## License
 

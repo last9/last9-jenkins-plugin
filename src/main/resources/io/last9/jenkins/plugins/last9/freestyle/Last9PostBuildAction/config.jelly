@@ -11,6 +11,11 @@
     <f:textbox />
   </f:entry>
 
+  <f:entry title="Event State" field="eventState"
+           description="Event state: start or stop (default: stop)">
+    <f:textbox default="stop" />
+  </f:entry>
+
   <f:entry title="Event Name" field="eventName"
            description="Custom event name (default: deployment)">
     <f:textbox default="deployment" />

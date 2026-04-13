@@ -17,6 +17,7 @@ import io.last9.jenkins.plugins.last9.event.EventBuilder;
 import io.last9.jenkins.plugins.last9.event.EventService;
 import io.last9.jenkins.plugins.last9.model.EventState;
 import jenkins.tasks.SimpleBuildStep;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -26,10 +27,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Post-build action for Freestyle jobs.
- * Sends a deployment marker to Last9 after the build completes.
+ * Sends a deployment marker to Last9. Works in both Freestyle and Pipeline.
  *
- * Also usable in pipelines via: step([$class: 'Last9PostBuildAction', serviceName: '...'])
+ * Freestyle: add as a post-build action. Use the send-on-* flags to control
+ * when the marker fires relative to the build result.
+ *
+ * Pipeline: call directly as a step — no node block required:
+ * <pre>
+ *   last9DeploymentMarker serviceName: 'payments-api', eventState: 'start'
+ *   // ... deploy ...
+ *   last9DeploymentMarker serviceName: 'payments-api', eventState: 'stop'
+ * </pre>
  */
 public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
 
@@ -37,10 +45,13 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
 
     private final String serviceName;
     private String environment;
+    private String eventState;    // 'start' or 'stop' — defaults to 'stop'
     private String eventName;
     private String dataSourceName;
+    private String orgSlug;       // per-step override (useful for multi-team Jenkins)
+    private String credentialId;  // per-step override
     private Map<String, String> customAttributes;
-    // Send conditions — defaults: only on success, silent on everything else
+    // Send conditions — only meaningful in Freestyle post-build context
     private boolean sendOnSuccess = true;
     private boolean sendOnFailure = false;
     private boolean sendOnUnstable = false;
@@ -55,8 +66,11 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
 
     public String getServiceName() { return serviceName; }
     public String getEnvironment() { return environment; }
+    public String getEventState() { return eventState; }
     public String getEventName() { return eventName != null ? eventName : EventBuilder.DEFAULT_EVENT_NAME; }
     public String getDataSourceName() { return dataSourceName; }
+    public String getOrgSlug() { return orgSlug; }
+    public String getCredentialId() { return credentialId; }
     public Map<String, String> getCustomAttributes() { return customAttributes; }
     public boolean isSendOnSuccess() { return sendOnSuccess; }
     public boolean isSendOnFailure() { return sendOnFailure; }
@@ -66,8 +80,11 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
     // --- Setters ---
 
     @DataBoundSetter public void setEnvironment(String environment) { this.environment = environment; }
+    @DataBoundSetter public void setEventState(String eventState) { this.eventState = eventState; }
     @DataBoundSetter public void setEventName(String eventName) { this.eventName = eventName; }
     @DataBoundSetter public void setDataSourceName(String dataSourceName) { this.dataSourceName = dataSourceName; }
+    @DataBoundSetter public void setOrgSlug(String orgSlug) { this.orgSlug = orgSlug; }
+    @DataBoundSetter public void setCredentialId(String credentialId) { this.credentialId = credentialId; }
     @DataBoundSetter public void setCustomAttributes(Map<String, String> customAttributes) { this.customAttributes = customAttributes; }
     @DataBoundSetter public void setSendOnSuccess(boolean sendOnSuccess) { this.sendOnSuccess = sendOnSuccess; }
     @DataBoundSetter public void setSendOnFailure(boolean sendOnFailure) { this.sendOnFailure = sendOnFailure; }
@@ -79,6 +96,8 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
                         Launcher launcher, TaskListener listener)
             throws InterruptedException, IOException {
 
+        // Result-based filtering is only meaningful in post-build / Freestyle context.
+        // In Pipeline the result may not be set yet when this step runs mid-stage.
         Result result = run.getResult();
         if (result != null) {
             if (Result.SUCCESS.equals(result) && !sendOnSuccess) return;
@@ -94,25 +113,30 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
             return;
         }
 
-        String orgSlug = config.getOrgSlug();
-        String credentialId = config.getCredentialId();
-        String dsName = (dataSourceName != null && !dataSourceName.isBlank())
-            ? dataSourceName : config.getDefaultDataSourceName();
+        EventState state;
+        try {
+            state = EventState.fromString(eventState);
+        } catch (IllegalArgumentException e) {
+            listener.error("[Last9] Invalid eventState '" + eventState
+                + "'. Use 'start' or 'stop'. Skipping.");
+            return;
+        }
 
+        String resolvedOrgSlug = coalesce(orgSlug, config.getOrgSlug());
+        String resolvedCredentialId = coalesce(credentialId, config.getCredentialId());
+        String dsName = coalesce(dataSourceName, config.getDefaultDataSourceName());
         EventService eventService = config.getEventService();
 
         try {
-            // Post-build action fires after the build completes, so send a "stop" event
             eventService.sendDeploymentMarker(
-                run, listener, credentialId, orgSlug,
-                getEventName(), EventState.STOP, dsName,
+                run, listener, resolvedCredentialId, resolvedOrgSlug,
+                getEventName(), state, dsName,
                 serviceName, environment, customAttributes
             );
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw e;
         } catch (Exception e) {
-            // Never fail the build due to observability errors
             LOGGER.log(Level.WARNING, "Failed to send deployment marker for " + run.getFullDisplayName(), e);
             listener.error("[Last9] Failed to send deployment marker: " + e.getMessage());
         }
@@ -138,8 +162,15 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
         return false;
     }
 
+    static String coalesce(String... values) {
+        for (String v : values) {
+            if (v != null && !v.isBlank()) return v;
+        }
+        return null;
+    }
+
     @Extension
-    @org.jenkinsci.Symbol("last9DeploymentMarker")
+    @Symbol("last9DeploymentMarker")
     public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
 
         @Override

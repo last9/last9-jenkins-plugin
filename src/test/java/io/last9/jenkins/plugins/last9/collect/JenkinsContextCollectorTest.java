@@ -23,12 +23,12 @@ public class JenkinsContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
 
-        assertEquals("payments-api", attrs.get("jenkins.job_name"));
-        assertEquals("42", attrs.get("jenkins.build_number"));
-        assertEquals("http://jenkins/job/payments-api/42/", attrs.get("jenkins.build_url"));
-        assertEquals("SUCCESS", attrs.get("jenkins.build_result"));
-        assertEquals("alice", attrs.get("jenkins.build_user"));
-        assertTrue(attrs.containsKey("jenkins.build_duration_ms"));
+        assertEquals("payments-api", attrs.get("jenkins_job_name"));
+        assertEquals("42", attrs.get("jenkins_build_number"));
+        assertEquals("http://jenkins/job/payments-api/42/", attrs.get("jenkins_build_url"));
+        assertEquals("SUCCESS", attrs.get("jenkins_build_result"));
+        assertEquals("alice", attrs.get("jenkins_build_user"));
+        assertTrue(attrs.containsKey("jenkins_build_duration_ms"));
     }
 
     @Test
@@ -37,7 +37,7 @@ public class JenkinsContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
 
-        assertFalse(attrs.containsKey("jenkins.build_result"));
+        assertFalse(attrs.containsKey("jenkins_build_result"));
     }
 
     @Test
@@ -46,7 +46,7 @@ public class JenkinsContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
 
-        assertFalse(attrs.containsKey("jenkins.build_url"));
+        assertFalse(attrs.containsKey("jenkins_build_url"));
     }
 
     @Test
@@ -59,8 +59,8 @@ public class JenkinsContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
 
-        assertFalse(attrs.containsKey("jenkins.job_name"));
-        assertEquals("5", attrs.get("jenkins.build_number"));
+        assertFalse(attrs.containsKey("jenkins_job_name"));
+        assertEquals("5", attrs.get("jenkins_build_number"));
     }
 
     @Test
@@ -69,7 +69,7 @@ public class JenkinsContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
 
-        assertFalse(attrs.containsKey("jenkins.build_user"));
+        assertFalse(attrs.containsKey("jenkins_build_user"));
     }
 
     @Test
@@ -88,7 +88,7 @@ public class JenkinsContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
 
-        assertFalse(attrs.containsKey("jenkins.build_user"));
+        assertFalse(attrs.containsKey("jenkins_build_user"));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class JenkinsContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
 
-        assertEquals("agent-linux-01", attrs.get("jenkins.node_name"));
+        assertEquals("agent-linux-01", attrs.get("jenkins_node_name"));
     }
 
     @Test
@@ -122,8 +122,8 @@ public class JenkinsContextCollectorTest {
         Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
 
         // Node name absent but everything else captured
-        assertFalse(attrs.containsKey("jenkins.node_name"));
-        assertEquals("my-job", attrs.get("jenkins.job_name"));
+        assertFalse(attrs.containsKey("jenkins_node_name"));
+        assertEquals("my-job", attrs.get("jenkins_job_name"));
     }
 
     @Test
@@ -132,7 +132,7 @@ public class JenkinsContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
 
-        long duration = Long.parseLong(attrs.get("jenkins.build_duration_ms"));
+        long duration = Long.parseLong(attrs.get("jenkins_build_duration_ms"));
         assertTrue("Duration should be non-negative", duration >= 0);
     }
 

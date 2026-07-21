@@ -11,9 +11,9 @@ pipeline {
           environment:    'production',
           eventState:     'start',
           customAttributes: [
-            'deploy.version':      env.BUILD_TAG,
-            'deploy.triggered_by': env.BUILD_USER ?: 'ci',
-            'deploy.method':       'blue-green'
+            'deploy_version':      env.BUILD_TAG,
+            'deploy_triggered_by': env.BUILD_USER ?: 'ci',
+            'deploy_method':       'blue-green'
           ]
         )
 
@@ -24,7 +24,7 @@ pipeline {
           environment: 'production',
           eventState:  'stop',
           customAttributes: [
-            'deploy.version': env.BUILD_TAG
+            'deploy_version': env.BUILD_TAG
           ]
         )
       }

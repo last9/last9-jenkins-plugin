@@ -28,10 +28,10 @@ public class ScmContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, listener);
 
-        assertEquals("abc123def456", attrs.get("scm.commit_sha"));
-        assertEquals("origin/main", attrs.get("scm.branch"));
-        assertEquals("https://github.com/acme/payments-api.git", attrs.get("scm.url"));
-        assertEquals("Alice", attrs.get("scm.author"));
+        assertEquals("abc123def456", attrs.get("scm_commit_sha"));
+        assertEquals("origin/main", attrs.get("scm_branch"));
+        assertEquals("https://github.com/acme/payments-api.git", attrs.get("scm_url"));
+        assertEquals("Alice", attrs.get("scm_author"));
     }
 
     @Test
@@ -46,10 +46,10 @@ public class ScmContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, listener);
 
-        assertTrue(attrs.containsKey("scm.commit_sha"));
-        assertFalse(attrs.containsKey("scm.branch"));
-        assertFalse(attrs.containsKey("scm.url"));
-        assertFalse(attrs.containsKey("scm.author"));
+        assertTrue(attrs.containsKey("scm_commit_sha"));
+        assertFalse(attrs.containsKey("scm_branch"));
+        assertFalse(attrs.containsKey("scm_url"));
+        assertFalse(attrs.containsKey("scm_author"));
     }
 
     @Test
@@ -64,8 +64,8 @@ public class ScmContextCollectorTest {
 
         Map<String, String> attrs = collector.collect(run, listener);
 
-        assertFalse(attrs.containsKey("scm.commit_sha"));
-        assertFalse(attrs.containsKey("scm.branch"));
+        assertFalse(attrs.containsKey("scm_commit_sha"));
+        assertFalse(attrs.containsKey("scm_branch"));
     }
 
     @Test

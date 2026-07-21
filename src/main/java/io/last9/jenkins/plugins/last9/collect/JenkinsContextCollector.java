@@ -23,34 +23,34 @@ public class JenkinsContextCollector implements AttributeCollector {
         try {
             var parent = run.getParent();
             if (parent != null) {
-                attrs.put("jenkins.job_name", parent.getFullName());
+                attrs.put("jenkins_job_name", parent.getFullName());
             }
-            attrs.put("jenkins.build_number", String.valueOf(run.getNumber()));
+            attrs.put("jenkins_build_number", String.valueOf(run.getNumber()));
 
             String buildUrl = run.getAbsoluteUrl();
             if (buildUrl != null) {
-                attrs.put("jenkins.build_url", buildUrl);
+                attrs.put("jenkins_build_url", buildUrl);
             }
 
             var result = run.getResult();
             if (result != null) {
-                attrs.put("jenkins.build_result", result.toString());
+                attrs.put("jenkins_build_result", result.toString());
             }
 
             long durationMs = System.currentTimeMillis() - run.getStartTimeInMillis();
-            attrs.put("jenkins.build_duration_ms", String.valueOf(durationMs));
+            attrs.put("jenkins_build_duration_ms", String.valueOf(durationMs));
 
             Cause.UserIdCause userCause = run.getCause(Cause.UserIdCause.class);
             if (userCause != null) {
                 String userId = userCause.getUserId();
                 if (userId != null) {
-                    attrs.put("jenkins.build_user", userId);
+                    attrs.put("jenkins_build_user", userId);
                 }
             }
 
             String nodeName = nodeNameFrom(run);
             if (nodeName != null) {
-                attrs.put("jenkins.node_name", nodeName);
+                attrs.put("jenkins_node_name", nodeName);
             }
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Error collecting Jenkins context", e);

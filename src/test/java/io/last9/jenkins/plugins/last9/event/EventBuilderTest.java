@@ -19,7 +19,7 @@ public class EventBuilderTest {
 
     @Test
     public void buildsEventWithCollectedAttributes() {
-        AttributeCollector collector = (run, listener) -> Map.of("jenkins.job_name", "my-job");
+        AttributeCollector collector = (run, listener) -> Map.of("jenkins_job_name", "my-job");
 
         var builder = new EventBuilder(List.of(collector));
         var run = mock(Run.class);
@@ -34,7 +34,7 @@ public class EventBuilderTest {
         assertEquals("ds-1", event.dataSourceName());
         assertEquals("my-svc", event.attributes().get("service"));
         assertEquals("prod", event.attributes().get("deployment_environment"));
-        assertEquals("my-job", event.attributes().get("jenkins.job_name"));
+        assertEquals("my-job", event.attributes().get("jenkins_job_name"));
         assertNotNull(event.timestamp());
     }
 

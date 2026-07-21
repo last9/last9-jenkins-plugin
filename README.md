@@ -90,8 +90,8 @@ last9DeploymentMarker(
   eventName:      'deployment',         // default: 'deployment'
   dataSourceName: 'payments-ds',        // overrides global default
   customAttributes: [
-    'deploy.version': '1.4.2',
-    'deploy.triggered_by': 'release-bot'
+    'deploy_version': '1.4.2',
+    'deploy_triggered_by': 'release-bot'
   ],
   // Override global config per-step (useful for multi-team Jenkins)
   orgSlug:      'acme',
@@ -105,17 +105,17 @@ These are wired up automatically:
 
 | Attribute | Source |
 |---|---|
-| `scm.commit_sha` | `$GIT_COMMIT` |
-| `scm.branch` | `$GIT_BRANCH` |
-| `scm.url` | `$GIT_URL` |
-| `scm.author` | `$GIT_AUTHOR_NAME` |
-| `jenkins.job_name` | build metadata |
-| `jenkins.build_number` | build metadata |
-| `jenkins.build_url` | build metadata |
-| `jenkins.build_result` | build metadata |
-| `jenkins.build_duration_ms` | build metadata |
-| `jenkins.build_user` | triggered-by user |
-| `jenkins.node_name` | executor node |
+| `scm_commit_sha` | `$GIT_COMMIT` |
+| `scm_branch` | `$GIT_BRANCH` |
+| `scm_url` | `$GIT_URL` |
+| `scm_author` | `$GIT_AUTHOR_NAME` |
+| `jenkins_job_name` | build metadata |
+| `jenkins_build_number` | build metadata |
+| `jenkins_build_url` | build metadata |
+| `jenkins_build_result` | build metadata |
+| `jenkins_build_duration_ms` | build metadata |
+| `jenkins_build_user` | triggered-by user |
+| `jenkins_node_name` | executor node |
 
 ## Freestyle
 

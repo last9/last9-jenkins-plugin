@@ -25,22 +25,22 @@ public class ScmContextCollector implements AttributeCollector {
 
             String commitSha = env.get("GIT_COMMIT");
             if (commitSha != null && !commitSha.isBlank()) {
-                attrs.put("scm.commit_sha", commitSha);
+                attrs.put("scm_commit_sha", commitSha);
             }
 
             String branch = env.get("GIT_BRANCH");
             if (branch != null && !branch.isBlank()) {
-                attrs.put("scm.branch", branch);
+                attrs.put("scm_branch", branch);
             }
 
             String gitUrl = env.get("GIT_URL");
             if (gitUrl != null && !gitUrl.isBlank()) {
-                attrs.put("scm.url", gitUrl);
+                attrs.put("scm_url", gitUrl);
             }
 
             String gitAuthor = env.get("GIT_AUTHOR_NAME");
             if (gitAuthor != null && !gitAuthor.isBlank()) {
-                attrs.put("scm.author", gitAuthor);
+                attrs.put("scm_author", gitAuthor);
             }
         } catch (NoClassDefFoundError e) {
             // Git plugin not installed — degrade gracefully

@@ -1,17 +1,14 @@
 package io.last9.jenkins.plugins.last9.freestyle;
 
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
+import hudson.model.Item;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.security.ACL;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
@@ -21,18 +18,17 @@ import io.last9.jenkins.plugins.last9.Last9GlobalConfiguration;
 import io.last9.jenkins.plugins.last9.event.EventBuilder;
 import io.last9.jenkins.plugins.last9.model.EventState;
 import io.last9.jenkins.plugins.last9.util.ConnectionOverrides;
+import io.last9.jenkins.plugins.last9.util.DescriptorFormSupport;
 import io.last9.jenkins.plugins.last9.util.Last9DeploymentMarkerSender;
-import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.verb.POST;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -197,33 +193,15 @@ public class Last9PostBuildAction extends Recorder implements SimpleBuildStep {
         }
 
         @POST
-        public ListBoxModel doFillCredentialIdItems(@QueryParameter String credentialId) {
-            Jenkins jenkins = Jenkins.get();
-            if (!jenkins.hasPermission(Jenkins.MANAGE)) {
-                return new StandardListBoxModel().includeCurrentValue(credentialId);
-            }
-            return new StandardListBoxModel()
-                .includeEmptyValue()
-                .includeMatchingAs(
-                    ACL.SYSTEM2,
-                    jenkins,
-                    StringCredentials.class,
-                    Collections.emptyList(),
-                    CredentialsMatchers.always()
-                )
-                .includeCurrentValue(credentialId);
+        public ListBoxModel doFillCredentialIdItems(
+                @AncestorInPath Item context, @QueryParameter String credentialId) {
+            return DescriptorFormSupport.fillCredentialIdItems(context, credentialId);
         }
 
         @POST
-        public ListBoxModel doFillRoutingProfileItems(@QueryParameter String routingProfile) {
-            if (!Jenkins.get().hasPermission(Jenkins.MANAGE)) {
-                return new StandardListBoxModel().includeCurrentValue(routingProfile);
-            }
-            Last9GlobalConfiguration config = Last9GlobalConfiguration.get();
-            if (config == null) {
-                return new ListBoxModel();
-            }
-            return config.doFillRoutingProfileItems(routingProfile);
+        public ListBoxModel doFillRoutingProfileItems(
+                @AncestorInPath Item context, @QueryParameter String routingProfile) {
+            return DescriptorFormSupport.fillRoutingProfileItems(context, routingProfile);
         }
     }
 }

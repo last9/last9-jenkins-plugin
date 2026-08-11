@@ -29,6 +29,57 @@ public class JenkinsContextCollectorTest {
         assertEquals("SUCCESS", attrs.get("jenkins_build_result"));
         assertEquals("alice", attrs.get("jenkins_build_user"));
         assertTrue(attrs.containsKey("jenkins_build_duration_ms"));
+        assertTrue(attrs.containsKey("jenkins_build_start_time"));
+    }
+
+    @Test
+    public void buildStartTimeIsValidIso8601() throws Exception {
+        Run<?, ?> run = stubRun("my-job", 1, null, null, null);
+
+        Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
+
+        String startTime = attrs.get("jenkins_build_start_time");
+        assertNotNull(startTime);
+        // ISO-8601 UTC format ends with 'Z'
+        assertTrue("Start time should end with Z: " + startTime, startTime.endsWith("Z"));
+    }
+
+    @Test
+    public void buildEndTimeEmittedWhenDurationAvailable() throws Exception {
+        Run<?, ?> run = stubRun("my-job", 1, null, Result.SUCCESS, null);
+        // getDuration() returns 0 by default in Mockito mock (>= 0), so end_time is emitted
+        when(run.getDuration()).thenReturn(500L);
+
+        Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
+
+        assertTrue("jenkins_build_end_time should be present when duration >= 0",
+            attrs.containsKey("jenkins_build_end_time"));
+        String endTime = attrs.get("jenkins_build_end_time");
+        assertTrue("End time should end with Z: " + endTime, endTime.endsWith("Z"));
+    }
+
+    @Test
+    public void buildEndTimeOmittedWhenBuildStillRunning() throws Exception {
+        Run<?, ?> run = stubRun("my-job", 1, null, null, null);
+        when(run.getDuration()).thenReturn(-1L);
+
+        Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
+
+        assertFalse("jenkins_build_end_time should not be present while build is running",
+            attrs.containsKey("jenkins_build_end_time"));
+    }
+
+    @Test
+    public void buildDurationMsUsesElapsedWhenRunning() throws Exception {
+        Run<?, ?> run = stubRun("my-job", 1, null, null, null);
+        long startMs = System.currentTimeMillis() - 2000;
+        when(run.getStartTimeInMillis()).thenReturn(startMs);
+        when(run.getDuration()).thenReturn(-1L);
+
+        Map<String, String> attrs = collector.collect(run, mock(TaskListener.class));
+
+        long duration = Long.parseLong(attrs.get("jenkins_build_duration_ms"));
+        assertTrue("Elapsed duration should be ~2s", duration >= 1000 && duration < 10_000);
     }
 
     @Test

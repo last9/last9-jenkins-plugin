@@ -9,3 +9,4 @@ work/
 *.jpi
 TESTING.md
 .DS_Store
+.env.local

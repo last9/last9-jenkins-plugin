@@ -8,7 +8,7 @@
     </f:entry>
 
     <f:entry title="API Base URL" field="apiBaseUrl"
-             description="Last9 API endpoint. Default: https://app.last9.io">
+             description="Default Last9 API endpoint. Default: https://app.last9.io">
       <f:textbox default="https://app.last9.io" />
     </f:entry>
 
@@ -20,6 +20,36 @@
     <f:entry title="Default Data Source Name" field="defaultDataSourceName"
              description="Default Last9 data source name for change events (optional)">
       <f:textbox />
+    </f:entry>
+
+    <f:entry title="Additional Environment Variables" field="additionalEnvVars"
+             description="Comma-separated env var names to auto-capture (e.g. BUILD_TAG,DEPLOY_REGION)">
+      <f:textbox />
+    </f:entry>
+
+    <f:entry title="Additional Build Parameters" field="additionalBuildParams"
+             description="Comma-separated build parameter names to auto-capture (e.g. DEPLOY_ENV,VERSION). Password parameters are never exported.">
+      <f:textbox />
+    </f:entry>
+
+    <f:entry title="Routing Profiles"
+             description="Named connection profiles for multi-org / multi-endpoint Jenkins. Select by profile name in jobs.">
+      <f:repeatable name="routingProfiles" add="Add routing profile">
+        <f:entry title="Profile Name" field="name">
+          <f:textbox />
+        </f:entry>
+        <f:entry title="Organization Slug" field="orgSlug">
+          <f:textbox />
+        </f:entry>
+        <f:entry title="API Credential" field="credentialId"
+                 description="Jenkins Secret text credential containing the Last9 refresh token">
+          <c:select />
+        </f:entry>
+        <f:entry title="API Base URL" field="apiBaseUrl"
+                 description="Leave blank to use default https://app.last9.io">
+          <f:textbox />
+        </f:entry>
+      </f:repeatable>
     </f:entry>
 
     <f:entry>

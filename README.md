@@ -19,6 +19,8 @@ Deployments are **windows**, not points. Send `start` when the deploy begins, `s
 - **Organization Slug** — your org identifier from the Last9 URL (e.g. `acme`)
 - **API Credential** — the credential you just created
 - **Default Data Source Name** — optional
+- **Additional Environment Variables** — comma-separated env var names to auto-capture (e.g. `BUILD_TAG,DEPLOY_REGION`)
+- **Additional Build Parameters** — comma-separated build parameter names to auto-capture (password params never exported)
 
 Hit **Test Connection** to verify before saving.
 
@@ -94,10 +96,64 @@ last9DeploymentMarker(
     'deploy_triggered_by': 'release-bot'
   ],
   // Override global config per-step (useful for multi-team Jenkins)
-  orgSlug:      'acme',
-  credentialId: 'last9-token-prod'
+  orgSlug:           'acme',
+  orgSlugParam:      'LAST9_ORG_SLUG',
+  orgSlugEnvVar:     'LAST9_ORG',
+  credentialId:      'last9-token-prod',
+  credentialIdParam: 'LAST9_CRED_ID',
+  credentialIdEnvVar: 'LAST9_CREDENTIAL_ID',
+  apiBaseUrl:        'https://app.last9.io',
+  apiBaseUrlParam:   'LAST9_API_URL',
+  routingProfile:    'acme-eu',
+  routingProfileParam: 'LAST9_ROUTING_PROFILE'
 )
 ```
+
+### Dynamic credentials via build parameters
+
+Pass the org slug and credential ID as build parameters — useful when a shared Jenkins instance serves multiple teams or environments:
+
+```groovy
+pipeline {
+  agent any
+  parameters {
+    string(name: 'LAST9_ORG_SLUG', defaultValue: '', description: 'Last9 org slug')
+    string(name: 'LAST9_CRED_ID',  defaultValue: '', description: 'Last9 Jenkins credential ID')
+  }
+  stages {
+    stage('Deploy') {
+      steps {
+        withLast9Deployment(
+          serviceName:       'payments-api',
+          environment:       'production',
+          orgSlugParam:      'LAST9_ORG_SLUG',
+          credentialIdParam: 'LAST9_CRED_ID'
+        ) {
+          sh './deploy.sh'
+        }
+      }
+    }
+  }
+}
+```
+
+See [examples/pipeline-dynamic-credentials.groovy](examples/pipeline-dynamic-credentials.groovy) for a complete example.
+
+### Multi-org and multi-endpoint routing
+
+Define **routing profiles** in **Manage Jenkins → System → Last9** (org + credential + API URL per profile). Select per job/step via `routingProfile`, `routingProfileParam`, or `routingProfileEnvVar`. Individual `orgSlug`, `credentialId`, and `apiBaseUrl` overrides (literal, param, or env var) still win over the profile.
+
+Freestyle jobs can pick a profile from the dropdown — no Pipeline Groovy required.
+
+See [examples/pipeline-multi-endpoint-routing.groovy](examples/pipeline-multi-endpoint-routing.groovy).
+
+Connection resolution order for each field:
+
+1. Literal value on the step
+2. Build parameter
+3. Environment variable
+4. Selected routing profile
+5. Global default
 
 ### Auto-captured attributes
 
@@ -113,9 +169,22 @@ These are wired up automatically:
 | `jenkins_build_number` | build metadata |
 | `jenkins_build_url` | build metadata |
 | `jenkins_build_result` | build metadata |
-| `jenkins_build_duration_ms` | build metadata |
+| `jenkins_build_start_time` | build start time (ISO-8601) |
+| `jenkins_build_end_time` | build end time (ISO-8601, only when complete) |
+| `jenkins_build_duration_ms` | build duration in milliseconds |
 | `jenkins_build_user` | triggered-by user |
 | `jenkins_node_name` | executor node |
+| `build_param_<name>` | allowlisted build parameters (name lowercased) |
+| `env_<name>` | env vars from the global allowlist (name lowercased) |
+
+### Deployment window attributes
+
+When using `withLast9Deployment` or paired `start`/`stop` markers, Last9 additionally receives:
+
+| Attribute | Description |
+|---|---|
+| `deployment_id` | UUID assigned at `start`, echoed at `stop` |
+| `deployment_window_duration_ms` | elapsed milliseconds between `start` and `stop` |
 
 ## Freestyle
 

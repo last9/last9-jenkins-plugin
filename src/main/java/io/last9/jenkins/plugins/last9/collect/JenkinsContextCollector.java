@@ -4,6 +4,9 @@ import hudson.model.Cause;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -15,6 +18,8 @@ import java.util.logging.Logger;
 public class JenkinsContextCollector implements AttributeCollector {
 
     private static final Logger LOGGER = Logger.getLogger(JenkinsContextCollector.class.getName());
+    private static final DateTimeFormatter ISO_FORMAT =
+        DateTimeFormatter.ISO_INSTANT.withZone(ZoneOffset.UTC);
 
     @Override
     public Map<String, String> collect(Run<?, ?> run, TaskListener listener) {
@@ -37,8 +42,21 @@ public class JenkinsContextCollector implements AttributeCollector {
                 attrs.put("jenkins_build_result", result.toString());
             }
 
-            long durationMs = System.currentTimeMillis() - run.getStartTimeInMillis();
+            long startMs = run.getStartTimeInMillis();
+            attrs.put("jenkins_build_start_time", ISO_FORMAT.format(Instant.ofEpochMilli(startMs)));
+
+            // Use run.getDuration() when the build has completed (>= 0), else fall back to elapsed
+            long durationMs = run.getDuration();
+            if (durationMs < 0) {
+                durationMs = System.currentTimeMillis() - startMs;
+            }
             attrs.put("jenkins_build_duration_ms", String.valueOf(durationMs));
+
+            // Emit end time only when the build has actually completed
+            if (run.getDuration() >= 0) {
+                long endMs = startMs + run.getDuration();
+                attrs.put("jenkins_build_end_time", ISO_FORMAT.format(Instant.ofEpochMilli(endMs)));
+            }
 
             Cause.UserIdCause userCause = run.getCause(Cause.UserIdCause.class);
             if (userCause != null) {

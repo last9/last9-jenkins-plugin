@@ -1,5 +1,5 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
 
   <f:entry title="Service Name" field="serviceName"
            description="Service name (must match APM service name in Last9)">
@@ -23,6 +23,66 @@
 
   <f:entry title="Data Source Name" field="dataSourceName"
            description="Override global data source name (optional)">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Routing Profile" field="routingProfile"
+           description="Global named profile (org + credential + API URL). Overrides global default when set.">
+    <f:select />
+  </f:entry>
+
+  <f:entry title="Routing Profile Parameter" field="routingProfileParam"
+           description="Build parameter whose value is a routing profile name">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Routing Profile Env Var" field="routingProfileEnvVar"
+           description="Environment variable whose value is a routing profile name">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Organization Slug" field="orgSlug"
+           description="Literal org slug override (optional)">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Org Slug Parameter" field="orgSlugParam"
+           description="Build parameter name for org slug">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Org Slug Env Var" field="orgSlugEnvVar"
+           description="Environment variable name for org slug">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="API Credential" field="credentialId"
+           description="Literal credential override (optional)">
+    <c:select />
+  </f:entry>
+
+  <f:entry title="Credential ID Parameter" field="credentialIdParam"
+           description="Build parameter name for credential ID">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="Credential ID Env Var" field="credentialIdEnvVar"
+           description="Environment variable name for credential ID">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="API Base URL" field="apiBaseUrl"
+           description="Literal API base URL override (optional)">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="API Base URL Parameter" field="apiBaseUrlParam"
+           description="Build parameter name for API base URL">
+    <f:textbox />
+  </f:entry>
+
+  <f:entry title="API Base URL Env Var" field="apiBaseUrlEnvVar"
+           description="Environment variable name for API base URL">
     <f:textbox />
   </f:entry>
 

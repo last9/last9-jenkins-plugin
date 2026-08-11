@@ -3,6 +3,8 @@ package io.last9.jenkins.plugins.last9.event;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.last9.jenkins.plugins.last9.collect.AttributeCollector;
+import io.last9.jenkins.plugins.last9.deployment.DeploymentWindowAction;
+import io.last9.jenkins.plugins.last9.deployment.DeploymentWindowTracker;
 import io.last9.jenkins.plugins.last9.model.ChangeEvent;
 import io.last9.jenkins.plugins.last9.model.EventState;
 import org.junit.Test;
@@ -102,5 +104,73 @@ public class EventBuilderTest {
 
         assertFalse(event.attributes().containsKey("service"));
         assertFalse(event.attributes().containsKey("deployment_environment"));
+    }
+
+    @Test
+    public void startEventAttachesDeploymentIdViaTracker() {
+        DeploymentWindowTracker tracker = mock(DeploymentWindowTracker.class);
+        when(tracker.start(any())).thenReturn("uuid-123");
+
+        var builder = new EventBuilder(Collections.emptyList(), tracker);
+        Run<?, ?> run = mock(Run.class);
+
+        ChangeEvent event = builder.build(
+            run, mock(TaskListener.class),
+            "deploy", EventState.START, null, "svc", null, null);
+
+        assertEquals("uuid-123", event.attributes().get("deployment_id"));
+        verify(tracker).start(run);
+    }
+
+    @Test
+    public void stopEventIncludesDeploymentIdAndDuration() {
+        DeploymentWindowTracker tracker = mock(DeploymentWindowTracker.class);
+        when(tracker.getDeploymentId(any())).thenReturn("uuid-456");
+        when(tracker.stop(any())).thenReturn(1500L);
+
+        var builder = new EventBuilder(Collections.emptyList(), tracker);
+        Run<?, ?> run = mock(Run.class);
+
+        ChangeEvent event = builder.build(
+            run, mock(TaskListener.class),
+            "deploy", EventState.STOP, null, "svc", null, null);
+
+        assertEquals("uuid-456", event.attributes().get("deployment_id"));
+        assertEquals("1500", event.attributes().get("deployment_window_duration_ms"));
+    }
+
+    @Test
+    public void customAttributesCannotOverrideDeploymentWindowFields() {
+        DeploymentWindowTracker tracker = mock(DeploymentWindowTracker.class);
+        when(tracker.start(any())).thenReturn("real-deployment-id");
+
+        var builder = new EventBuilder(Collections.emptyList(), tracker);
+        Map<String, String> custom = Map.of(
+            "deployment_id", "attacker-id",
+            "deployment_window_duration_ms", "0"
+        );
+
+        ChangeEvent event = builder.build(
+            mock(Run.class), mock(TaskListener.class),
+            "deploy", EventState.START, null, "svc", null, custom);
+
+        assertEquals("real-deployment-id", event.attributes().get("deployment_id"));
+        assertFalse(event.attributes().containsKey("deployment_window_duration_ms"));
+    }
+
+    @Test
+    public void stopEventOmitsDurationWhenTrackerReturnsNegativeOne() {
+        DeploymentWindowTracker tracker = mock(DeploymentWindowTracker.class);
+        when(tracker.getDeploymentId(any())).thenReturn(null);
+        when(tracker.stop(any())).thenReturn(-1L);
+
+        var builder = new EventBuilder(Collections.emptyList(), tracker);
+
+        ChangeEvent event = builder.build(
+            mock(Run.class), mock(TaskListener.class),
+            "deploy", EventState.STOP, null, "svc", null, null);
+
+        assertFalse(event.attributes().containsKey("deployment_window_duration_ms"));
+        assertFalse(event.attributes().containsKey("deployment_id"));
     }
 }

@@ -4,7 +4,10 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Result;
 import io.last9.jenkins.plugins.last9.Last9GlobalConfiguration;
+import io.last9.jenkins.plugins.last9.event.EventService;
 import io.last9.jenkins.plugins.last9.freestyle.Last9PostBuildAction;
+import io.last9.jenkins.plugins.last9.model.EventState;
+import io.last9.jenkins.plugins.last9.model.RoutingProfile;
 import io.last9.jenkins.plugins.last9.wrapper.Last9BuildWrapper;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -13,9 +16,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Integration tests that spin up a real Jenkins instance.
@@ -163,6 +169,108 @@ public class Last9PipelineIntegrationTest {
         // Start was sent before the failing step; stop was sent after
         j.assertLogContains("[Last9] Sending deployment marker: deployment (start)", build);
         j.assertLogContains("[Last9] Sending deployment marker: deployment (stop)", build);
+    }
+
+    @Test
+    public void pipelineWrapper_routingProfileEnvVar_usesProfileConnection() throws Exception {
+        Last9GlobalConfiguration config = Last9GlobalConfiguration.get();
+        config.setRoutingProfiles(List.of(
+            new RoutingProfile("region-eu", "eu-org", "eu-cred", "https://app.last9.io")
+        ));
+        EventService eventService = mock(EventService.class);
+        config.setEventServiceForTesting(eventService);
+
+        WorkflowJob job = j.createProject(WorkflowJob.class, "test-routing-profile-env-pipeline");
+        job.setDefinition(new CpsFlowDefinition(
+            "node {\n"
+            + "  withEnv(['LAST9_ROUTING_PROFILE=region-eu']) {\n"
+            + "    withLast9Deployment(\n"
+            + "      serviceName: 'payments-api',\n"
+            + "      environment: 'production',\n"
+            + "      routingProfileEnvVar: 'LAST9_ROUTING_PROFILE'\n"
+            + "    ) {\n"
+            + "      echo 'deploy'\n"
+            + "    }\n"
+            + "  }\n"
+            + "}",
+            true
+        ));
+
+        WorkflowRun run = j.buildAndAssertSuccess(job);
+        verify(eventService).sendDeploymentMarker(
+            eq(run),
+            any(),
+            eq("eu-cred"),
+            eq("eu-org"),
+            eq("deployment"),
+            eq(EventState.START),
+            isNull(),
+            eq("payments-api"),
+            eq("production"),
+            isNull()
+        );
+        verify(eventService).sendDeploymentMarker(
+            eq(run),
+            any(),
+            eq("eu-cred"),
+            eq("eu-org"),
+            eq("deployment"),
+            eq(EventState.STOP),
+            isNull(),
+            eq("payments-api"),
+            eq("production"),
+            isNull()
+        );
+    }
+
+    @Test
+    public void pipelineWrapper_routingProfile_sendsStartAndStop() throws Exception {
+        Last9GlobalConfiguration config = Last9GlobalConfiguration.get();
+        config.setRoutingProfiles(List.of(
+            new RoutingProfile("region-eu", "eu-org", "eu-cred", "https://app.last9.io")
+        ));
+        EventService eventService = mock(EventService.class);
+        config.setEventServiceForTesting(eventService);
+
+        WorkflowJob job = j.createProject(WorkflowJob.class, "test-routing-profile-wrapper");
+        job.setDefinition(new CpsFlowDefinition(
+            "node {\n"
+            + "  withLast9Deployment(\n"
+            + "    serviceName: 'payments-api',\n"
+            + "    environment: 'production',\n"
+            + "    routingProfile: 'region-eu'\n"
+            + "  ) {\n"
+            + "    echo 'deploy'\n"
+            + "  }\n"
+            + "}",
+            true
+        ));
+
+        WorkflowRun run = j.buildAndAssertSuccess(job);
+        verify(eventService).sendDeploymentMarker(
+            eq(run),
+            any(),
+            eq("eu-cred"),
+            eq("eu-org"),
+            eq("deployment"),
+            eq(EventState.START),
+            isNull(),
+            eq("payments-api"),
+            eq("production"),
+            isNull()
+        );
+        verify(eventService).sendDeploymentMarker(
+            eq(run),
+            any(),
+            eq("eu-cred"),
+            eq("eu-org"),
+            eq("deployment"),
+            eq(EventState.STOP),
+            isNull(),
+            eq("payments-api"),
+            eq("production"),
+            isNull()
+        );
     }
 
     // --- Helpers ---

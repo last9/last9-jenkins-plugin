@@ -23,9 +23,11 @@ import org.kohsuke.stapler.verb.POST;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -227,9 +229,43 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
 
     @DataBoundSetter
     public void setRoutingProfiles(List<RoutingProfile> routingProfiles) {
-        this.routingProfiles = routingProfiles != null ? new ArrayList<>(routingProfiles) : new ArrayList<>();
+        List<RoutingProfile> profiles = routingProfiles != null ? new ArrayList<>(routingProfiles) : new ArrayList<>();
+        String duplicateName = findDuplicateRoutingProfileName(profiles);
+        if (duplicateName != null) {
+            throw new IllegalArgumentException("Duplicate routing profile name: " + duplicateName);
+        }
+        this.routingProfiles = profiles;
         clearEventServiceCache();
         save();
+    }
+
+    /**
+     * Builds routing profile dropdown options (no permission check — caller must gate).
+     */
+    public ListBoxModel buildRoutingProfileListBox(String routingProfile) {
+        StandardListBoxModel model = new StandardListBoxModel();
+        model.includeCurrentValue(routingProfile);
+        model.add("", "");
+        for (RoutingProfile profile : getRoutingProfiles()) {
+            if (profile != null && profile.getName() != null && !profile.getName().isBlank()) {
+                model.add(profile.getName(), profile.getName());
+            }
+        }
+        return model;
+    }
+
+    private static String findDuplicateRoutingProfileName(List<RoutingProfile> profiles) {
+        Set<String> seen = new HashSet<>();
+        for (RoutingProfile profile : profiles) {
+            if (profile == null || profile.getName() == null || profile.getName().isBlank()) {
+                continue;
+            }
+            String name = profile.getName().trim();
+            if (!seen.add(name)) {
+                return name;
+            }
+        }
+        return null;
     }
 
     private void clearEventServiceCache() {
@@ -311,13 +347,6 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
         if (!Jenkins.get().hasPermission(Jenkins.MANAGE)) {
             return new StandardListBoxModel().includeCurrentValue(routingProfile);
         }
-        ListBoxModel model = new ListBoxModel();
-        model.add("", "");
-        for (RoutingProfile profile : getRoutingProfiles()) {
-            if (profile != null && profile.getName() != null && !profile.getName().isBlank()) {
-                model.add(profile.getName(), profile.getName());
-            }
-        }
-        return model;
+        return buildRoutingProfileListBox(routingProfile);
     }
 }

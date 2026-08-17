@@ -34,7 +34,7 @@
 
     <f:entry title="Routing Profiles"
              description="Named connection profiles for multi-org / multi-endpoint Jenkins. Select by profile name in jobs.">
-      <f:repeatable name="routingProfiles" add="Add routing profile">
+      <f:repeatable field="routingProfiles" add="Add routing profile">
         <f:entry title="Profile Name" field="name">
           <f:textbox />
         </f:entry>

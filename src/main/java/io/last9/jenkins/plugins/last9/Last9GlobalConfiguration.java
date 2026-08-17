@@ -13,6 +13,7 @@ import io.last9.jenkins.plugins.last9.event.EventService;
 import io.last9.jenkins.plugins.last9.model.RoutingProfile;
 import io.last9.jenkins.plugins.last9.util.ConfigResolver;
 import jenkins.model.GlobalConfiguration;
+import jenkins.model.GlobalConfigurationCategory;
 import jenkins.model.Jenkins;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
@@ -118,6 +119,11 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
             return null;
         }
         return GlobalConfiguration.all().get(Last9GlobalConfiguration.class);
+    }
+
+    @Override
+    public GlobalConfigurationCategory getCategory() {
+        return GlobalConfigurationCategory.get(GlobalConfigurationCategory.Unclassified.class);
     }
 
     // --- Getters ---

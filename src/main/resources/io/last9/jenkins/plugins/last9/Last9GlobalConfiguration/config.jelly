@@ -49,6 +49,11 @@
                  description="Leave blank to use default https://app.last9.io">
           <f:textbox />
         </f:entry>
+        <f:entry>
+          <div align="right">
+            <f:repeatableDeleteButton value="Remove routing profile" />
+          </div>
+        </f:entry>
       </f:repeatable>
     </f:entry>
 

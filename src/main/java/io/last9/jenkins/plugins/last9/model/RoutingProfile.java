@@ -4,7 +4,7 @@ import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.ListBoxModel;
-import io.last9.jenkins.plugins.last9.Last9GlobalConfiguration;
+import io.last9.jenkins.plugins.last9.util.DescriptorFormSupport;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
@@ -74,7 +74,7 @@ public class RoutingProfile extends AbstractDescribableImpl<RoutingProfile> {
 
         @POST
         public ListBoxModel doFillCredentialIdItems(@QueryParameter String credentialId) {
-            return Last9GlobalConfiguration.fillCredentialIdItems(credentialId);
+            return DescriptorFormSupport.fillCredentialIdItems(null, credentialId);
         }
     }
 }

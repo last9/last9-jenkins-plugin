@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import hudson.Extension;
+import hudson.model.Descriptor;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
@@ -14,10 +15,12 @@ import io.last9.jenkins.plugins.last9.model.RoutingProfile;
 import io.last9.jenkins.plugins.last9.util.ConfigResolver;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.verb.POST;
 
 import java.util.ArrayList;
@@ -118,6 +121,18 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
             return null;
         }
         return GlobalConfiguration.all().get(Last9GlobalConfiguration.class);
+    }
+
+    @Override
+    public boolean configure(StaplerRequest2 req, JSONObject json) throws Descriptor.FormException {
+        // Stapler's default bindJSON only calls setRoutingProfiles when the submitted form
+        // has a "routingProfiles" key. Deleting every row leaves that key absent rather than
+        // an empty array, so the old list would otherwise survive a "remove all" edit.
+        boolean result = super.configure(req, json);
+        if (!json.has("routingProfiles")) {
+            setRoutingProfiles(Collections.emptyList());
+        }
+        return result;
     }
 
     // --- Getters ---
@@ -326,6 +341,14 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
 
     @POST
     public ListBoxModel doFillCredentialIdItems(@QueryParameter String credentialId) {
+        return fillCredentialIdItems(credentialId);
+    }
+
+    /**
+     * Shared credential dropdown logic for both the global config form and each
+     * routing profile row. Requires {@link Jenkins#MANAGE}.
+     */
+    public static ListBoxModel fillCredentialIdItems(String credentialId) {
         Jenkins jenkins = Jenkins.get();
         if (!jenkins.hasPermission(Jenkins.MANAGE)) {
             return new StandardListBoxModel().includeCurrentValue(credentialId);

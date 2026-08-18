@@ -1,13 +1,20 @@
 package io.last9.jenkins.plugins.last9.model;
 
+import hudson.Extension;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
+import hudson.util.ListBoxModel;
+import io.last9.jenkins.plugins.last9.Last9GlobalConfiguration;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.verb.POST;
 
 /**
  * Named Last9 connection profile (org + credential + API endpoint).
  * Configured globally and selected per job/step via routing profile name.
  */
-public class RoutingProfile {
+public class RoutingProfile extends AbstractDescribableImpl<RoutingProfile> {
 
     private String name;
     private String orgSlug;
@@ -56,5 +63,18 @@ public class RoutingProfile {
     @DataBoundSetter
     public void setApiBaseUrl(String apiBaseUrl) {
         this.apiBaseUrl = apiBaseUrl;
+    }
+
+    @Extension
+    public static class DescriptorImpl extends Descriptor<RoutingProfile> {
+        @Override
+        public String getDisplayName() {
+            return "Routing Profile";
+        }
+
+        @POST
+        public ListBoxModel doFillCredentialIdItems(@QueryParameter String credentialId) {
+            return Last9GlobalConfiguration.fillCredentialIdItems(credentialId);
+        }
     }
 }

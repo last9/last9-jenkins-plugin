@@ -13,6 +13,7 @@ import io.last9.jenkins.plugins.last9.auth.CachingTokenManager;
 import io.last9.jenkins.plugins.last9.event.EventService;
 import io.last9.jenkins.plugins.last9.model.RoutingProfile;
 import io.last9.jenkins.plugins.last9.util.ConfigResolver;
+import io.last9.jenkins.plugins.last9.util.DescriptorFormSupport;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
@@ -341,28 +342,7 @@ public class Last9GlobalConfiguration extends GlobalConfiguration {
 
     @POST
     public ListBoxModel doFillCredentialIdItems(@QueryParameter String credentialId) {
-        return fillCredentialIdItems(credentialId);
-    }
-
-    /**
-     * Shared credential dropdown logic for both the global config form and each
-     * routing profile row. Requires {@link Jenkins#MANAGE}.
-     */
-    public static ListBoxModel fillCredentialIdItems(String credentialId) {
-        Jenkins jenkins = Jenkins.get();
-        if (!jenkins.hasPermission(Jenkins.MANAGE)) {
-            return new StandardListBoxModel().includeCurrentValue(credentialId);
-        }
-        return new StandardListBoxModel()
-            .includeEmptyValue()
-            .includeMatchingAs(
-                ACL.SYSTEM2,
-                jenkins,
-                StringCredentials.class,
-                Collections.emptyList(),
-                CredentialsMatchers.always()
-            )
-            .includeCurrentValue(credentialId);
+        return DescriptorFormSupport.fillCredentialIdItems(null, credentialId);
     }
 
     @POST
